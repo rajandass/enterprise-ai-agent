@@ -7,24 +7,27 @@ import time
 
 load_dotenv()
 
+# ✅ Load once (critical optimization)
+embeddings = OpenAIEmbeddings()
+# Load vector DB
+
+db = Chroma(
+    persist_directory = "models/vector_db",
+    embedding_function = embeddings
+)
+
+# Retrieve relevant docs
+retriever = db.as_retriever(search_kwargs={"k": 2})
+
+# LLM
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+
 def ask_question(query: str):
     start_time = time.time()
-    # Load vector DB
-    embeddings = OpenAIEmbeddings()
-    db = Chroma(
-        persist_directory = "models/vector_db",
-        embedding_function = embeddings
-    )
 
-    # Retrieve relevant docs
-    retriever = db.as_retriever(search_kwargs={"k": 2})
     docs = retriever.invoke(query)
 
     context = "\n".join([doc.page_content for doc in docs])
-
-    # LLM
-    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-
     prompt = f"""
     You are an enterprise assistant.
     Answer ONLY from the context below.
@@ -36,9 +39,10 @@ def ask_question(query: str):
     {query}
     """
     response =  llm .invoke(prompt)
-    end_time = time.time()
-    latency = end_time - start_time
+
+    latency = time.time() - start_time
     
+
     print("\n📊 DEBUG INFO")
     print(f"Query: {query}")
     print(f"Latency: {latency:.2f} sec")
