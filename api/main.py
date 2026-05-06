@@ -10,8 +10,5 @@ class QueryRequest(BaseModel):
 
 @app.post("/ask")
 def ask(req: QueryRequest):
-    answer = ask_question(req.question)
-    return {
-        "question": req.question,
-        "answer": answer
-    }
+    result = ask_question(req.question)
+    return result

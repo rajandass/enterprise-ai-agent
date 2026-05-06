@@ -45,9 +45,12 @@ def ask_question(query: str):
     Q:{query}
     A:""".strip()
 
-
+    if not docs:
+          return "⚠️ No relevant information found in knowledge base."
+    
     response = llm.invoke(prompt)
     answer = response.content
+
 
     usage = response.response_metadata.get("token_usage", {})
 
@@ -58,7 +61,18 @@ def ask_question(query: str):
     # Approx pricing (gpt-4o-mini)
     cost_per_1k_tokens = 0.00015
     cost = (total_tokens / 1000) * cost_per_1k_tokens
+    cost = round(cost, 6)
 
+    confidence = "HIGH"
+    if not docs:
+        confidence = "LOW"
+    elif total_tokens < 30:
+        confidence = "MEDIUM"
+    elif "no relevant" in context.lower():
+        confidence = "LOW"
+
+    sources = [doc.metadata.get("source", "unknown") for doc in docs]
+    
     latency = time.time() - start_time
 
 
@@ -76,8 +90,17 @@ def ask_question(query: str):
     print(f"Estimated cost: ${cost:.6f}")
 
     # ✅ Store result
-    cache[query] = answer
-    return answer
+    result = {
+        "answer": answer,
+        "confidence": confidence,
+        "tokens": total_tokens,
+        "cost": cost,
+        "latency": round(latency, 2),
+        "sources": sources
+    }
+
+    cache[query] = result
+    return result
 
 if __name__ == "__main__":
     question = "How many leave days do employees get?"
