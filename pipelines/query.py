@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_chroma import Chroma
 import time
+from functools import lru_cache
 
 load_dotenv()
 
@@ -21,39 +22,62 @@ retriever = db.as_retriever(search_kwargs={"k": 1})
 
 # LLM
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0 , max_tokens=100)
+
 cache = {}
 
 def ask_question(query: str):
+    query = query.strip().lower()
     if query in cache:
-        print("⚡ Cache hit")
+        print("⚡ Cache HIT")
+        print(f"Cache size: {len(cache)}")
         return cache[query]
+
 
     start_time = time.time()
     docs = retriever.invoke(query)
 
-    context = "\n".join([doc.page_content for doc in docs])
+    context = "\n".join([doc.page_content for doc in docs]) if docs else "No relevant context found."
     prompt = f"""
-    Answer the question using ONLY the context.
+    Answer using ONLY the context.
 
-    Context:
-    {context}
+    Context:{context}
 
     Q:{query}
-    A:
-    """
-    response =  llm .invoke(prompt)
-    cache[query] = response.content
+    A:""".strip()
+
+
+    response = llm.invoke(prompt)
+    answer = response.content
+
+    usage = response.response_metadata.get("token_usage", {})
+
+    prompt_tokens = usage.get("prompt_tokens", 0)
+    completion_tokens = usage.get("completion_tokens", 0)
+    total_tokens = usage.get("total_tokens", 0)
+
+    # Approx pricing (gpt-4o-mini)
+    cost_per_1k_tokens = 0.00015
+    cost = (total_tokens / 1000) * cost_per_1k_tokens
 
     latency = time.time() - start_time
 
 
     print("\n📊 DEBUG INFO")
+    print(f"Cache MISS")
     print(f"Query: {query}")
     print(f"Latency: {latency:.2f} sec")
     print(f"Context length: {len(context)} chars")
+    print(f"Prompt hash: {hash(prompt)}")
 
+    print("\n💰 TOKEN USAGE")
+    print(f"Prompt tokens: {prompt_tokens}")
+    print(f"Completion tokens: {completion_tokens}")
+    print(f"Total tokens: {total_tokens}")
+    print(f"Estimated cost: ${cost:.6f}")
 
-    return response.content
+    # ✅ Store result
+    cache[query] = answer
+    return answer
 
 if __name__ == "__main__":
     question = "How many leave days do employees get?"
