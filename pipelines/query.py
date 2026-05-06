@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_chroma import Chroma
 import time
-from functools import lru_cache
+import uuid
 
 load_dotenv()
 
@@ -51,6 +51,21 @@ def ask_question(query: str):
     response = llm.invoke(prompt)
     answer = response.content
 
+    verification_prompt = f"""
+    Check if the answer is fully supported by the context.
+
+    Context:
+    {context}
+
+    Answer:
+    {answer}
+
+    Respond with ONLY one word:
+    - SUPPORTED
+    - PARTIALLY_SUPPORTED
+    - NOT_SUPPORTED
+    """
+    verification_response = llm.invoke(verification_prompt).content.strip()
 
     usage = response.response_metadata.get("token_usage", {})
 
@@ -63,16 +78,15 @@ def ask_question(query: str):
     cost = (total_tokens / 1000) * cost_per_1k_tokens
     cost = round(cost, 6)
 
-    confidence = "HIGH"
-    if not docs:
-        confidence = "LOW"
-    elif total_tokens < 30:
+    if verification_response == "SUPPORTED":
+        confidence = "HIGH"
+    elif verification_response == "PARTIALLY_SUPPORTED":
         confidence = "MEDIUM"
-    elif "no relevant" in context.lower():
+    else:
         confidence = "LOW"
 
     sources = [doc.metadata.get("source", "unknown") for doc in docs]
-    
+
     latency = time.time() - start_time
 
 
@@ -96,7 +110,7 @@ def ask_question(query: str):
         "tokens": total_tokens,
         "cost": cost,
         "latency": round(latency, 2),
-        "sources": sources
+        "citations": sources
     }
 
     cache[query] = result
