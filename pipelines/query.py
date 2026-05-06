@@ -26,11 +26,17 @@ llm = ChatOpenAI(model="gpt-4o-mini", temperature=0 , max_tokens=100)
 cache = {}
 
 def ask_question(query: str):
+    print("🔥 ENTERED ask_question")
     query = query.strip().lower()
     if query in cache:
         print("⚡ Cache HIT")
-        print(f"Cache size: {len(cache)}")
-        return cache[query]
+        cached = cache[query]
+        # 🔥 Safety guard
+        if isinstance(cached, str):
+            print("⚠️ Old cache detected, clearing...")
+            cache.pop(query)
+        else:
+            return cached
 
 
     start_time = time.time()
@@ -46,7 +52,17 @@ def ask_question(query: str):
     A:""".strip()
 
     if not docs:
-          return "⚠️ No relevant information found in knowledge base."
+           
+        result = {
+        "answer": "⚠️ No relevant information found in knowledge base.",
+        "confidence": "LOW",
+        "tokens": 0,
+        "cost": 0.0,
+        "latency": 0,
+        "citations": []
+        }
+        cache[query] = result
+        return result
     
     response = llm.invoke(prompt)
     answer = response.content
@@ -114,6 +130,9 @@ def ask_question(query: str):
     }
 
     cache[query] = result
+
+    print("🔥 QUERY FUNCTION EXECUTED")
+    print("🔥 FINAL RETURN TYPE:", type(result))
     return result
 
 if __name__ == "__main__":
