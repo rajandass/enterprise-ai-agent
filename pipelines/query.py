@@ -17,31 +17,35 @@ db = Chroma(
 )
 
 # Retrieve relevant docs
-retriever = db.as_retriever(search_kwargs={"k": 2})
+retriever = db.as_retriever(search_kwargs={"k": 1})
 
 # LLM
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0 , max_tokens=100)
+cache = {}
 
 def ask_question(query: str):
-    start_time = time.time()
+    if query in cache:
+        print("⚡ Cache hit")
+        return cache[query]
 
+    start_time = time.time()
     docs = retriever.invoke(query)
 
     context = "\n".join([doc.page_content for doc in docs])
     prompt = f"""
-    You are an enterprise assistant.
-    Answer ONLY from the context below.
+    Answer the question using ONLY the context.
 
     Context:
     {context}
 
-    Question:
-    {query}
+    Q:{query}
+    A:
     """
     response =  llm .invoke(prompt)
+    cache[query] = response.content
 
     latency = time.time() - start_time
-    
+
 
     print("\n📊 DEBUG INFO")
     print(f"Query: {query}")
