@@ -8,6 +8,7 @@ from opentelemetry.instrumentation.logging import LoggingInstrumentor
 from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
 from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
 from azure.monitor.opentelemetry.exporter import AzureMonitorLogExporter
+from opentelemetry._logs import set_logger_provider
 
 import pipelines.query
 
@@ -20,7 +21,8 @@ if connection_string:
         connection_string=connection_string
     )
     logger_provider = LoggerProvider()
-
+    set_logger_provider(logger_provider)
+    
     log_exporter = AzureMonitorLogExporter(
         connection_string=connection_string
     )
