@@ -5,7 +5,14 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from azure.monitor.opentelemetry import configure_azure_monitor
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
-from fastapi import Header, HTTPException
+from fastapi import Header, HTTPException,Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.extension import _rate_limit_exceeded_handler
+
+
 
 import pipelines.query
 from pipelines.query  import ask_question
@@ -28,8 +35,16 @@ logger.propagate = True
 logger.info(f"query_module_loaded: {pipelines.query.__file__}")
 logger.info("application_startup_completed")
 
-
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="Enterprise AI Support Agent")
+
+app.state.limiter = limiter
+app.add_exception_handler(
+    RateLimitExceeded,
+    _rate_limit_exceeded_handler
+)
+
+app.add_middleware(SlowAPIMiddleware)
 
 class QueryRequest(BaseModel):
 
@@ -47,7 +62,9 @@ def health_check():
 
 
 @app.post("/ask")
+@limiter.limit("5/minute")
 def ask(
+    request: Request,
     req: QueryRequest,
     x_api_key: str = Header(None)
 ):
