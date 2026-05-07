@@ -1,12 +1,20 @@
+import os
+import uuid
 from fastapi import FastAPI
 from pydantic import BaseModel
-import uuid
+from azure.monitor.opentelemetry import configure_azure_monitor
+
 import pipelines.query
 print("🔥 IMPORTED FROM:", pipelines.query.__file__)
 from pipelines.query  import ask_question
 from pipelines.ingestion import run_ingestion
 
-
+connection_string = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING")
+if connection_string:
+    configure_azure_monitor(
+        connection_string=connection_string
+    )
+    
 app = FastAPI(title="Enterprise AI Support Agent")
 
 class QueryRequest(BaseModel):
