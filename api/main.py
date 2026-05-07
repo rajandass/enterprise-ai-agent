@@ -16,10 +16,15 @@ if connection_string:
     configure_azure_monitor(
         connection_string=connection_string
     )
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s"
+)
 LoggingInstrumentor().instrument(set_logging_format=True)
 logger = logging.getLogger(__name__)
-    
+logger.info("application_startup_completed")
+
+
 app = FastAPI(title="Enterprise AI Support Agent")
 
 class QueryRequest(BaseModel):
