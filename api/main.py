@@ -4,6 +4,7 @@ import logging
 from fastapi import FastAPI
 from pydantic import BaseModel
 from azure.monitor.opentelemetry import configure_azure_monitor
+from opentelemetry.instrumentation.logging import LoggingInstrumentor
 
 import pipelines.query
 print("🔥 IMPORTED FROM:", pipelines.query.__file__)
