@@ -81,3 +81,24 @@ def ask(
         "request_id": request_id,
         **result
     }
+
+@app.get("/health/live")
+def liveness_probe():
+    return {
+        "status": "alive"
+    }
+
+
+@app.get("/health/ready")
+def readiness_probe():
+    checks = {
+        "openai_api_key": bool(os.getenv("OPENAI_API_KEY")),
+        "api_key": bool(os.getenv("API_KEY"))
+    }
+
+    all_ready = all(checks.values())
+
+    return {
+        "status": "ready" if all_ready else "not_ready",
+        "checks": checks
+    }
