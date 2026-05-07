@@ -1,10 +1,13 @@
 import os
+import logging
+import time
+
 from dotenv import load_dotenv
 
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_chroma import Chroma
-import time
-import uuid
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -26,7 +29,7 @@ llm = ChatOpenAI(model="gpt-4o-mini", temperature=0 , max_tokens=100)
 cache = {}
 
 def ask_question(query: str):
-    print("🔥 ENTERED ask_question")
+    logger.info("ask_question_started")
     query = query.strip().lower()
     if query in cache:
         print("⚡ Cache HIT")
@@ -52,7 +55,7 @@ def ask_question(query: str):
     A:""".strip()
 
     if not docs:
-           
+
         result = {
         "answer": "⚠️ No relevant information found in knowledge base.",
         "confidence": "LOW",
@@ -108,15 +111,15 @@ def ask_question(query: str):
 
     print("\n📊 DEBUG INFO")
     print(f"Cache MISS")
-    print(f"Query: {query}")
-    print(f"Latency: {latency:.2f} sec")
+    logger.info(f"query_received: {query}")
+    logger.info(f"query_latency_seconds: {latency}")
     print(f"Context length: {len(context)} chars")
     print(f"Prompt hash: {hash(prompt)}")
 
     print("\n💰 TOKEN USAGE")
     print(f"Prompt tokens: {prompt_tokens}")
     print(f"Completion tokens: {completion_tokens}")
-    print(f"Total tokens: {total_tokens}")
+    logger.info(f"total_tokens_used: {total_tokens}")
     print(f"Estimated cost: ${cost:.6f}")
 
     # ✅ Store result

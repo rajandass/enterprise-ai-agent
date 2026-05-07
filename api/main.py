@@ -1,5 +1,6 @@
 import os
 import uuid
+import logging
 from fastapi import FastAPI
 from pydantic import BaseModel
 from azure.monitor.opentelemetry import configure_azure_monitor
@@ -14,6 +15,8 @@ if connection_string:
     configure_azure_monitor(
         connection_string=connection_string
     )
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
     
 app = FastAPI(title="Enterprise AI Support Agent")
 
