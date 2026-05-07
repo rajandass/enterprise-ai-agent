@@ -10,8 +10,8 @@ from pipelines.ingestion import run_ingestion
 app = FastAPI(title="Enterprise AI Support Agent")
 
 class QueryRequest(BaseModel):
-    question: str
-    
+    query: str
+
 @app.on_event("startup")
 def startup_event():
     print("🚀 Running ingestion...")
@@ -24,7 +24,7 @@ def health_check():
 @app.post("/ask")
 def ask(req: QueryRequest):
     request_id = str(uuid.uuid4())  # ✅ HERE
-    result = ask_question(req.question)
+    result = ask_question(req.query)
 
     print("DEBUG TYPE:", type(result))  # 🔥 ADD THIS
     return {
