@@ -5,6 +5,8 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from azure.monitor.opentelemetry import configure_azure_monitor
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
+from fastapi import Header, HTTPException
+
 import pipelines.query
 from pipelines.query  import ask_question
 from pipelines.ingestion import run_ingestion
@@ -30,7 +32,9 @@ logger.info("application_startup_completed")
 app = FastAPI(title="Enterprise AI Support Agent")
 
 class QueryRequest(BaseModel):
+
     query: str
+API_KEY = os.getenv("API_KEY")
 
 @app.on_event("startup")
 def startup_event():
@@ -41,8 +45,17 @@ def startup_event():
 def health_check():
     return {"status": "ok"}
 
+
 @app.post("/ask")
-def ask(req: QueryRequest):
+def ask(
+    req: QueryRequest,
+    x_api_key: str = Header(None)
+):
+    if x_api_key != API_KEY:
+        raise HTTPException(
+        status_code=401,
+        detail="Unauthorized"
+        )
     request_id = str(uuid.uuid4())  # ✅ HERE
     result = ask_question(req.query)
 
