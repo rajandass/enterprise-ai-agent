@@ -5,6 +5,9 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from azure.monitor.opentelemetry import configure_azure_monitor
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
+from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
+from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
+from azure.monitor.opentelemetry.exporter import AzureMonitorLogExporter
 
 import pipelines.query
 
@@ -16,6 +19,25 @@ if connection_string:
     configure_azure_monitor(
         connection_string=connection_string
     )
+    logger_provider = LoggerProvider()
+
+    log_exporter = AzureMonitorLogExporter(
+        connection_string=connection_string
+    )
+
+    logger_provider.add_log_record_processor(
+        BatchLogRecordProcessor(log_exporter)
+    )
+
+    handler = LoggingHandler(
+        level=logging.INFO,
+        logger_provider=logger_provider
+    )
+
+    root_logger = logging.getLogger()
+    root_logger.addHandler(handler)
+
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s %(message)s"
