@@ -7,7 +7,7 @@ from azure.monitor.opentelemetry import configure_azure_monitor
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
 
 import pipelines.query
-print("🔥 IMPORTED FROM:", pipelines.query.__file__)
+
 from pipelines.query  import ask_question
 from pipelines.ingestion import run_ingestion
 
@@ -22,6 +22,8 @@ logging.basicConfig(
 )
 LoggingInstrumentor().instrument(set_logging_format=True)
 logger = logging.getLogger(__name__)
+logger.propagate = True
+logger.info(f"query_module_loaded: {pipelines.query.__file__}")
 logger.info("application_startup_completed")
 
 
@@ -32,7 +34,7 @@ class QueryRequest(BaseModel):
 
 @app.on_event("startup")
 def startup_event():
-    print("🚀 Running ingestion...")
+    logger.info("running_ingestion")
     run_ingestion()
 
 @app.get("/")
@@ -44,7 +46,7 @@ def ask(req: QueryRequest):
     request_id = str(uuid.uuid4())  # ✅ HERE
     result = ask_question(req.query)
 
-    print("DEBUG TYPE:", type(result))  # 🔥 ADD THIS
+    logger.info(f"response_type: {type(result)}") 
     return {
         "request_id": request_id,
         **result
