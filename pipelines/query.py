@@ -111,7 +111,7 @@ def ask_question(query: str):
 
     print("\n📊 DEBUG INFO")
     print(f"Cache MISS")
-    logger.info(f"query_received: {query}")
+    logger.warning(f"query_received: {query}")
     logger.info(f"query_latency_seconds: {latency}")
     print(f"Context length: {len(context)} chars")
     print(f"Prompt hash: {hash(prompt)}")
