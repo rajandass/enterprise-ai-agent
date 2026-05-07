@@ -17,6 +17,7 @@ if connection_string:
         connection_string=connection_string
     )
 logging.basicConfig(level=logging.INFO)
+LoggingInstrumentor().instrument(set_logging_format=True)
 logger = logging.getLogger(__name__)
     
 app = FastAPI(title="Enterprise AI Support Agent")
