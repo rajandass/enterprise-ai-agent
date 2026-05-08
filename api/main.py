@@ -12,11 +12,19 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.extension import _rate_limit_exceeded_handler
 import redis
+from fastapi.responses import StreamingResponse
 
 
-import pipelines.query
-from pipelines.query  import ask_question
+
+from pipelines.query import (
+    ask_question,
+    stream_answer
+)
 from pipelines.ingestion import run_ingestion
+
+
+
+
 
 connection_string = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING")
 redis_client = redis.Redis(
@@ -38,7 +46,7 @@ LoggingInstrumentor().instrument(set_logging_format=True)
 logger = logging.getLogger(__name__)
 logger.propagate = True
 
-logger.info(f"query_module_loaded: {pipelines.query.__file__}")
+
 logger.info("application_startup_completed")
 
 limiter = Limiter(key_func=get_remote_address)
@@ -87,6 +95,25 @@ def ask(
         "request_id": request_id,
         **result
     }
+
+@app.post("/ask-stream")
+def ask_stream(
+    request: Request,
+    req: QueryRequest,
+    x_api_key: str = Header(None)
+):
+
+    if x_api_key != API_KEY:
+        raise HTTPException(
+            status_code=401,
+            detail="Unauthorized"
+        )
+
+    return StreamingResponse(
+        stream_answer(req.query),
+        media_type="text/plain"
+    )
+
 
 @app.get("/health/live")
 def liveness_probe():
