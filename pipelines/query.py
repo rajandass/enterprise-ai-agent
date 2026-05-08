@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_chroma import Chroma
+from langchain_core.messages import HumanMessage
 
 redis_connection_string = os.getenv("REDIS_CONNECTION_STRING")
 
@@ -164,8 +165,43 @@ def ask_question(query: str):
         )
     return result
 
+
+def stream_answer(query: str):
+
+    query = query.strip().lower()
+
+    docs = retriever.invoke(query)
+
+    context = "\n".join(
+        [doc.page_content for doc in docs]
+    ) if docs else "No relevant context found."
+
+    prompt = f'''
+    Answer using ONLY the context.
+
+    Context:
+    {context}
+
+    Q: {query}
+    A:
+    '''.strip()
+
+    stream_llm = ChatOpenAI(
+        model="gpt-4o-mini",
+        temperature=0,
+        streaming=True
+    )
+
+    for chunk in stream_llm.stream(
+        [HumanMessage(content=prompt)]
+    ):
+        if chunk.content:
+            yield chunk.content
+
+
 if __name__ == "__main__":
     question = "How many leave days do employees get?"
     answer = ask_question(question)
     print("\n🤖 Answer:")
     print(answer)
+    
