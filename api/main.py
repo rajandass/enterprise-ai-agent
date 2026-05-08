@@ -11,7 +11,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.extension import _rate_limit_exceeded_handler
-
+import redis
 
 
 import pipelines.query
@@ -19,6 +19,12 @@ from pipelines.query  import ask_question
 from pipelines.ingestion import run_ingestion
 
 connection_string = os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING")
+redis_client = redis.Redis(
+    host="localhost",
+    port=6379,
+    decode_responses=True
+)
+
 if connection_string:
     configure_azure_monitor(
         connection_string=connection_string
@@ -93,7 +99,8 @@ def liveness_probe():
 def readiness_probe():
     checks = {
         "openai_api_key": bool(os.getenv("OPENAI_API_KEY")),
-        "api_key": bool(os.getenv("API_KEY"))
+        "api_key": bool(os.getenv("API_KEY")),
+        "redis": redis_client.ping()
     }
 
     all_ready = all(checks.values())
