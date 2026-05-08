@@ -1,166 +1,331 @@
-# 🚀 Enterprise AI Support Agent (Production-Grade RAG System)
+# Enterprise AI Support Agent
 
-## 📌 Overview
-
-This project is a **production-ready Retrieval-Augmented Generation (RAG) system** that answers enterprise queries using internal documents.
-
-It demonstrates:
-
-* AI system design (not just API usage)
-* RAG architecture
-* Performance optimization
-* Cost tracking
-* Hallucination detection
-* API deployment readiness
+Production-grade AI support platform built with FastAPI, OpenAI, ChromaDB, Azure App Service, Azure Application Insights, and enterprise security/observability practices.
 
 ---
 
-## 🧠 Key Features
+# 🚀 Features
 
-* ✅ Retrieval-Augmented Generation (RAG)
-* ✅ FastAPI-based API service
-* ✅ Vector database (Chroma)
-* ✅ LLM integration (OpenAI)
-* ✅ Caching (instant repeat queries)
-* ✅ Token usage & cost tracking
-* ✅ Latency monitoring
-* ✅ Confidence scoring (LLM verification)
-* ✅ Source attribution (citations)
+## AI & Retrieval
+
+* Retrieval-Augmented Generation (RAG)
+* OpenAI-powered question answering
+* ChromaDB vector database
+* Semantic document retrieval
+* Automated ingestion pipeline
+
+## API Platform
+
+* FastAPI backend
+* Swagger/OpenAPI documentation
+* Structured API responses
+* Request tracing
+* Health probe endpoints
+
+## Cloud & DevOps
+
+* Azure App Service deployment
+* GitHub Actions CI/CD pipeline
+* Protected production deployments
+* Branch protection rules
+* Pull request governance
+
+## Observability
+
+* Azure Application Insights integration
+* Structured logging
+* Distributed tracing
+* Live metrics monitoring
+* Dependency tracking
+* Production telemetry
+
+## Security
+
+* API key authentication
+* Azure Key Vault integration
+* Managed Identity authentication
+* RBAC-based secret access
+* Rate limiting protection
+
+## Reliability & Operations
+
+* Liveness probe
+* Readiness probe
+* Failed request alerting
+* Availability alerting
+* Latency alerting
 
 ---
 
-## 🏗️ Architecture
+# 🏗️ Architecture
 
-User → API → Retrieval → LLM → Verification → Response
-
----
-
-## ⚙️ Tech Stack
-
-* Python
-* FastAPI
-* LangChain
-* ChromaDB
-* OpenAI (GPT-4o-mini)
-* Uvicorn
-
----
-
-## 📂 Project Structure
-
+```text
+Client
+   ↓
+FastAPI API Layer
+   ↓
+Authentication & Rate Limiting
+   ↓
+RAG Pipeline
+   ↓
+OpenAI + ChromaDB
+   ↓
+Azure Monitoring & Telemetry
 ```
+
+---
+
+# 📂 Project Structure
+
+```text
 enterprise-ai-agent/
 │
-├── api/                # FastAPI application
-├── pipelines/          # RAG pipelines (ingestion + query)
-├── evaluation/         # Evaluation scripts
-├── data/               # Sample documents
-├── models/             # Vector DB (ignored in git)
-├── .env                # API keys (ignored)
-├── README.md
+├── api/
+│   └── main.py
+│
+├── pipelines/
+│   ├── ingestion.py
+│   └── query.py
+│
+├── data/
+├── chroma_db/
+├── .github/workflows/
+├── requirements.txt
+├── Dockerfile
+└── README.md
 ```
 
 ---
 
-## 🚀 How to Run
+# ⚙️ Tech Stack
 
-### 1. Setup environment
+| Category      | Technology                 |
+| ------------- | -------------------------- |
+| Backend       | FastAPI                    |
+| LLM           | OpenAI GPT                 |
+| Vector DB     | ChromaDB                   |
+| Cloud         | Azure App Service          |
+| Observability | Azure Application Insights |
+| Secrets       | Azure Key Vault            |
+| Auth          | API Key Authentication     |
+| CI/CD         | GitHub Actions             |
+| Monitoring    | Azure Monitor              |
+| Rate Limiting | SlowAPI                    |
 
-```
-python -m venv venv
-.\venv\Scripts\activate
-pip install -r requirements.txt
-```
+---
 
-### 2. Add API Key
+# 🔐 Security Features
 
-Create `.env`:
+## API Authentication
 
-```
-OPENAI_API_KEY=your_key_here
-```
+All protected endpoints require:
 
-### 3. Run ingestion
-
-```
-python pipelines/ingestion.py
-```
-
-### 4. Start API
-
-```
-uvicorn api.main:app --reload
-```
-
-### 5. Test API
-
-Open:
-
-```
-http://127.0.0.1:8000/docs
+```http
+x-api-key: YOUR_API_KEY
 ```
 
 ---
 
-## 📊 Sample API Response
+## Key Vault Integration
 
+Secrets are managed using:
+
+* Azure Key Vault
+* Managed Identity
+* RBAC authorization
+
+No production secrets are hardcoded.
+
+---
+
+## Rate Limiting
+
+API requests are throttled using:
+
+```text
+5 requests per minute per client
 ```
+
+Excess requests return:
+
+```http
+429 Too Many Requests
+```
+
+---
+
+# 📊 Observability
+
+## Application Insights
+
+Integrated telemetry includes:
+
+* Request tracing
+* Dependency tracking
+* Structured logs
+* Performance monitoring
+* Failure analytics
+
+## Operational Alerts
+
+Configured alerts:
+
+* High failed requests
+* Availability degradation
+* High response latency
+
+---
+
+# ❤️ Health Probes
+
+## Liveness Probe
+
+```http
+GET /health/live
+```
+
+Response:
+
+```json
 {
-  "request_id": "uuid",
-  "answer": "Employees are entitled to 20 days...",
-  "confidence": "HIGH",
-  "latency": 2.36,
-  "tokens": 101,
-  "cost": 0.000015,
-  "citations": ["data/company_docs.txt"]
+  "status": "alive"
 }
 ```
 
 ---
 
-## 💰 Cost Efficiency
+## Readiness Probe
 
-* ~100 tokens per query
-* ~$0.000015 per request
-* ~1M queries ≈ $15
+```http
+GET /health/ready
+```
 
----
+Response:
 
-## 🔍 Observability
-
-* Latency tracking
-* Token usage tracking
-* Cost estimation
-* Cache hit detection
-
----
-
-## 🧠 Hallucination Control
-
-* LLM-based verification layer
-* Confidence scoring (HIGH / MEDIUM / LOW)
-* Context-grounded answers only
+```json
+{
+  "status": "ready",
+  "checks": {
+    "openai_api_key": true,
+    "api_key": true
+  }
+}
+```
 
 ---
 
-## 📈 Future Improvements
+# 🚀 Local Development
+
+## 1. Clone Repository
+
+```bash
+git clone <repo-url>
+cd enterprise-ai-agent
+```
+
+---
+
+## 2. Create Virtual Environment
+
+```bash
+python -m venv venv
+```
+
+Activate:
+
+### Windows PowerShell
+
+```powershell
+.\venv\Scripts\Activate.ps1
+```
+
+---
+
+## 3. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## 4. Configure Environment Variables
+
+### Local Variables
+
+```powershell
+$env:OPENAI_API_KEY="your-openai-key"
+$env:API_KEY="your-api-key"
+$env:APPLICATIONINSIGHTS_CONNECTION_STRING="your-connection-string"
+```
+
+---
+
+## 5. Run Application
+
+```bash
+uvicorn api.main:app --reload
+```
+
+Swagger UI:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+---
+
+# ☁️ Azure Deployment
+
+## Azure Services Used
+
+* Azure App Service
+* Azure Application Insights
+* Azure Key Vault
+* Azure Monitor
+
+---
+
+## CI/CD Pipeline
+
+Deployment pipeline includes:
+
+* GitHub Actions
+* Pull request validation
+* Protected main branch
+* Manual production approvals
+
+---
+
+# 📈 Current Production Capabilities
+
+✅ Enterprise Authentication
+✅ Secret Management
+✅ Production Monitoring
+✅ Structured Logging
+✅ Rate Limiting
+✅ Health Monitoring
+✅ Alerting
+✅ CI/CD Governance
+✅ Azure Deployment
+
+---
+
+# 🛣️ Planned Enhancements
 
 * Redis caching
 * Streaming responses
-* Async pipeline
-* Azure deployment
-* CI/CD integration
+* Background job queues
+* Async ingestion pipeline
+* Frontend UI
+* Kubernetes deployment
+* Semantic caching
+* Multi-tenant architecture
 
 ---
 
-## 👨‍💻 Author
+# 👨‍💻 Author
 
-Built as a **production-grade AI system** to demonstrate real-world AI engineering capabilities.
+Rajan Dass
 
----
-
-## ⭐ Key Takeaway
-
-This is not a demo project.
-
-It is a **deployable, scalable, and measurable AI system** aligned with real enterprise needs.
+Enterprise AI Platform Engineering Project

@@ -1,15 +1,31 @@
 import os
 import logging
 import time
-
+import redis
 from dotenv import load_dotenv
 
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_chroma import Chroma
 
+redis_connection_string = os.getenv("REDIS_CONNECTION_STRING")
+
+if redis_connection_string:
+    redis_client = redis.from_url(
+        f"rediss://{redis_connection_string}",
+        decode_responses=True
+    )
+else:
+    redis_client = redis.Redis(
+        host="localhost",
+        port=6379,
+        decode_responses=True
+    )
+
 logger = logging.getLogger(__name__)
 
 load_dotenv()
+
+
 
 # ✅ Load once (critical optimization)
 embeddings = OpenAIEmbeddings()
@@ -26,21 +42,27 @@ retriever = db.as_retriever(search_kwargs={"k": 1})
 # LLM
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0 , max_tokens=100)
 
-cache = {}
+
 
 def ask_question(query: str):
-    logger.info("ask_question_started")
-    query = query.strip().lower()
-    if query in cache:
-        print("⚡ Cache HIT")
-        cached = cache[query]
-        # 🔥 Safety guard
-        if isinstance(cached, str):
-            print("⚠️ Old cache detected, clearing...")
-            cache.pop(query)
-        else:
-            return cached
 
+    query = query.strip().lower()
+    cache_key = f"query:{query}"
+
+    cached_response = redis_client.get(cache_key)
+
+    if cached_response:
+        logger.warning(f"cache_hit: {query}")
+
+        return {
+            "answer": cached_response,
+            "source": "redis_cache"
+        }
+
+    logger.warning(f"cache_miss: {query}")
+
+
+    logger.info("ask_question_started")
 
     start_time = time.time()
     docs = retriever.invoke(query)
@@ -64,7 +86,7 @@ def ask_question(query: str):
         "latency": 0,
         "citations": []
         }
-        cache[query] = result
+
         return result
     
     response = llm.invoke(prompt)
@@ -109,18 +131,18 @@ def ask_question(query: str):
     latency = time.time() - start_time
 
 
-    print("\n📊 DEBUG INFO")
-    print(f"Cache MISS")
+    logger.info("debug_info_started")
+    logger.info(f"Cache MISS")
     logger.warning(f"query_received: {query}")
     logger.info(f"query_latency_seconds: {latency}")
-    print(f"Context length: {len(context)} chars")
-    print(f"Prompt hash: {hash(prompt)}")
+    logger.info(f"Context length: {len(context)} chars")
+    logger.info(f"Prompt hash: {hash(prompt)}")
 
-    print("\n💰 TOKEN USAGE")
-    print(f"Prompt tokens: {prompt_tokens}")
-    print(f"Completion tokens: {completion_tokens}")
+    logger.info("\n💰 TOKEN USAGE")
+    logger.info(f"Prompt tokens: {prompt_tokens}")
+    logger.info(f"Completion tokens: {completion_tokens}")
     logger.info(f"total_tokens_used: {total_tokens}")
-    print(f"Estimated cost: ${cost:.6f}")
+    logger.info(f"Estimated cost: ${cost:.6f}")
 
     # ✅ Store result
     result = {
@@ -132,10 +154,14 @@ def ask_question(query: str):
         "citations": sources
     }
 
-    cache[query] = result
+    logger.info("🔥 QUERY FUNCTION EXECUTED")
+    logger.info(f"🔥 FINAL RETURN TYPE: {type(result)}")
 
-    print("🔥 QUERY FUNCTION EXECUTED")
-    print("🔥 FINAL RETURN TYPE:", type(result))
+    redis_client.setex(
+    cache_key,
+    3600,
+    answer
+        )
     return result
 
 if __name__ == "__main__":
