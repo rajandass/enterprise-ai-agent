@@ -11,7 +11,7 @@ redis_connection_string = os.getenv("REDIS_CONNECTION_STRING")
 
 if redis_connection_string:
     redis_client = redis.from_url(
-        f"rediss://{redis_connection_string}",
+        redis_connection_string,
         decode_responses=True
     )
 else:
