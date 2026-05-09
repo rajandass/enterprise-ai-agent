@@ -13,6 +13,14 @@ from slowapi.middleware import SlowAPIMiddleware
 from slowapi.extension import _rate_limit_exceeded_handler
 import redis
 from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
+from services.conversation_service import (
+    save_message,
+    get_conversation,
+    list_conversations,
+    create_chat_session,
+    generate_title
+)
 
 
 
@@ -51,6 +59,17 @@ logger.info("application_startup_completed")
 
 limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="Enterprise AI Support Agent")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "https://enterprise-ai-ui-prod-12345.azurewebsites.net"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 app.state.limiter = limiter
 app.add_exception_handler(
@@ -63,7 +82,10 @@ app.add_middleware(SlowAPIMiddleware)
 class QueryRequest(BaseModel):
 
     query: str
+    session_id: str
+
 API_KEY = os.getenv("API_KEY")
+
 
 @app.on_event("startup")
 def startup_event():
@@ -80,15 +102,38 @@ def health_check():
 def ask(
     request: Request,
     req: QueryRequest,
-    x_api_key: str = Header(None)
+    x_api_key: str = Header(
+    None,
+    alias="X-Api-Key"
+            )
 ):
+
     if x_api_key != API_KEY:
         raise HTTPException(
         status_code=401,
         detail="Unauthorized"
         )
-    request_id = str(uuid.uuid4())  # ✅ HERE
+    request_id = str(uuid.uuid4())
     result = ask_question(req.query)
+    session_id = req.session_id
+
+    create_chat_session(
+    session_id=session_id,
+    title=generate_title(req.query)
+    )
+
+    save_message(
+        session_id=session_id,
+        role="user",
+        content=req.query
+    )
+
+    save_message(
+        session_id=session_id,
+        role="assistant",
+        content=result["answer"],
+        citations=result.get("citations", [])
+    )
 
     logger.info(f"response_type: {type(result)}") 
     return {
@@ -97,10 +142,14 @@ def ask(
     }
 
 @app.post("/ask-stream")
+@limiter.limit("5/minute")
 def ask_stream(
     request: Request,
     req: QueryRequest,
-    x_api_key: str = Header(None)
+    x_api_key: str = Header(
+    None,
+    alias="X-Api-Key"
+        )
 ):
 
     if x_api_key != API_KEY:
@@ -135,4 +184,23 @@ def readiness_probe():
     return {
         "status": "ready" if all_ready else "not_ready",
         "checks": checks
+    }
+
+@app.get("/conversations/{session_id}")
+def get_conversation_history(
+    session_id: str
+):
+    messages = get_conversation(session_id)
+
+    return {
+        "session_id": session_id,
+        "messages": messages
+    }
+
+@app.get("/conversations")
+def get_conversations():
+    conversations = list_conversations()
+
+    return {
+        "conversations": conversations
     }

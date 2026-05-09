@@ -3,7 +3,7 @@ import logging
 import time
 import redis
 from dotenv import load_dotenv
-
+import json
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_chroma import Chroma
 from langchain_core.messages import HumanMessage
@@ -41,7 +41,7 @@ db = Chroma(
 retriever = db.as_retriever(search_kwargs={"k": 1})
 
 # LLM
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0 , max_tokens=100)
+llm = ChatOpenAI(model="gpt-4o-mini", temperature=0 , max_tokens=500)
 
 
 
@@ -55,10 +55,7 @@ def ask_question(query: str):
     if cached_response:
         logger.warning(f"cache_hit: {query}")
 
-        return {
-            "answer": cached_response,
-            "source": "redis_cache"
-        }
+        return json.loads(cached_response)
 
     logger.warning(f"cache_miss: {query}")
 
@@ -161,7 +158,7 @@ def ask_question(query: str):
     redis_client.setex(
     cache_key,
     3600,
-    answer
+    json.dumps(result)
         )
     return result
 
