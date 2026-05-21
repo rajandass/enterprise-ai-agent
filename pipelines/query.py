@@ -1,78 +1,75 @@
-import os
+
 import logging
 import time
-import redis
-from dotenv import load_dotenv
-import json
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain_chroma import Chroma
 from langchain_core.messages import HumanMessage
+from services.observability.token_usage_service import (
+    calculate_token_usage
+)
 
-redis_connection_string = os.getenv("REDIS_CONNECTION_STRING")
+from services.cache.cache_service import (
+    get_cached_response,
+    set_cached_response,
+    build_cache_hit_response
+)
+from services.verification.answer_verification_service import (
+    verify_grounded_answer
+)
 
-if redis_connection_string:
-    redis_client = redis.from_url(
-        redis_connection_string,
-        decode_responses=True
-    )
-else:
-    redis_client = redis.Redis(
-        host="localhost",
-        port=6379,
-        decode_responses=True
-    )
+from services.prompts.rag_prompt_service import (
+    build_rag_prompt
+)
+
+from core.config import settings
+
+from services.llm.llm_service import (
+    get_llm,
+    get_streaming_llm
+)
+
+from services.retrieval.chroma_retriever_service import (
+    get_retriever
+)
 
 logger = logging.getLogger(__name__)
 
-load_dotenv()
-
-
-
-# ✅ Load once (critical optimization)
-embeddings = OpenAIEmbeddings()
-# Load vector DB
-
-db = Chroma(
-    persist_directory = "models/vector_db",
-    embedding_function = embeddings
-)
-
-# Retrieve relevant docs
-retriever = db.as_retriever(search_kwargs={"k": 1})
-
-# LLM
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0 , max_tokens=500)
-
-
+retriever = get_retriever(k=1)
 
 def ask_question(query: str):
 
     query = query.strip().lower()
     cache_key = f"query:{query}"
 
-    cached_response = redis_client.get(cache_key)
-
+    start_time = time.time()
+    cached_response = get_cached_response(
+        cache_key
+    )
     if cached_response:
-        logger.warning(f"cache_hit: {query}")
 
-        return json.loads(cached_response)
+        logger.warning(
+            f"cache_hit: {query}"
+        )
+
+        cache_latency = (
+            time.time() - start_time
+        )
+
+        return build_cache_hit_response(
+            cached_response=cached_response,
+            latency=cache_latency
+        )
 
     logger.warning(f"cache_miss: {query}")
 
 
     logger.info("ask_question_started")
 
-    start_time = time.time()
     docs = retriever.invoke(query)
 
     context = "\n".join([doc.page_content for doc in docs]) if docs else "No relevant context found."
-    prompt = f"""
-    Answer using ONLY the context.
-
-    Context:{context}
-
-    Q:{query}
-    A:""".strip()
+    prompt = build_rag_prompt(
+        query=query,
+        context=context
+    )
 
     if not docs:
 
@@ -87,42 +84,32 @@ def ask_question(query: str):
 
         return result
     
+    llm = get_llm()
     response = llm.invoke(prompt)
     answer = response.content
 
-    verification_prompt = f"""
-    Check if the answer is fully supported by the context.
+    verification_result = verify_grounded_answer(context, answer)
+    confidence = verification_result.get("confidence")
 
-    Context:
-    {context}
+    token_usage = calculate_token_usage(
+    response
+    )
 
-    Answer:
-    {answer}
+    prompt_tokens = (
+        token_usage["prompt_tokens"]
+    )
 
-    Respond with ONLY one word:
-    - SUPPORTED
-    - PARTIALLY_SUPPORTED
-    - NOT_SUPPORTED
-    """
-    verification_response = llm.invoke(verification_prompt).content.strip()
+    completion_tokens = (
+        token_usage["completion_tokens"]
+    )
 
-    usage = response.response_metadata.get("token_usage", {})
+    total_tokens = (
+        token_usage["total_tokens"]
+    )
 
-    prompt_tokens = usage.get("prompt_tokens", 0)
-    completion_tokens = usage.get("completion_tokens", 0)
-    total_tokens = usage.get("total_tokens", 0)
-
-    # Approx pricing (gpt-4o-mini)
-    cost_per_1k_tokens = 0.00015
-    cost = (total_tokens / 1000) * cost_per_1k_tokens
-    cost = round(cost, 6)
-
-    if verification_response == "SUPPORTED":
-        confidence = "HIGH"
-    elif verification_response == "PARTIALLY_SUPPORTED":
-        confidence = "MEDIUM"
-    else:
-        confidence = "LOW"
+    cost = (
+        token_usage["estimated_cost"]
+    )
 
     sources = [doc.metadata.get("source", "unknown") for doc in docs]
 
@@ -149,17 +136,18 @@ def ask_question(query: str):
         "tokens": total_tokens,
         "cost": cost,
         "latency": round(latency, 2),
-        "citations": sources
+        "citations": sources,
+        "cache_hit": False,
     }
 
     logger.info("🔥 QUERY FUNCTION EXECUTED")
     logger.info(f"🔥 FINAL RETURN TYPE: {type(result)}")
 
-    redis_client.setex(
-    cache_key,
-    3600,
-    json.dumps(result)
-        )
+    set_cached_response(
+        cache_key,
+        result,
+        ttl=3600
+    )
     return result
 
 
@@ -167,34 +155,65 @@ def stream_answer(query: str):
 
     query = query.strip().lower()
 
+    cache_key = f"stream:{query}"
+
+    cached_response = get_cached_response(
+        cache_key
+    )
+
+    if cached_response:
+
+        logger.warning(
+            f"stream_cache_hit: {query}"
+        )
+
+        cached_text = cached_response.get(
+            "answer",
+            ""
+        )
+
+        for word in cached_text.split():
+
+            yield word + " "
+
+        return
+
+    logger.warning(
+        f"stream_cache_miss: {query}"
+    )
+
     docs = retriever.invoke(query)
 
     context = "\n".join(
         [doc.page_content for doc in docs]
     ) if docs else "No relevant context found."
 
-    prompt = f'''
-    Answer using ONLY the context.
-
-    Context:
-    {context}
-
-    Q: {query}
-    A:
-    '''.strip()
-
-    stream_llm = ChatOpenAI(
-        model="gpt-4o-mini",
-        temperature=0,
-        streaming=True
+    prompt = build_rag_prompt(
+        query=query,
+        context=context
     )
+
+    stream_llm = get_streaming_llm()
+
+    full_response = ""
 
     for chunk in stream_llm.stream(
         [HumanMessage(content=prompt)]
     ):
+
         if chunk.content:
+
+            full_response += chunk.content
+
             yield chunk.content
 
+    set_cached_response(
+        cache_key,
+        {
+            "answer": full_response
+        },
+        ttl=3600
+    )
 
 if __name__ == "__main__":
     question = "How many leave days do employees get?"

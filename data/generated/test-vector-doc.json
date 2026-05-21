@@ -1,0 +1,16 @@
+{
+  "value": [
+    {
+      "@search.action": "upload",
+      "chunk_id": "test-chunk-001",
+      "document_id": "test-doc-001",
+      "subject": "Biology",
+      "chapter": "Cell: The Unit of Life",
+      "topic": "Introduction",
+      "source_document": "NCERT Biology",
+      "page_number": 1,
+      "content": "Cells are the basic structural and functional units of life.",
+      "embedding": [0.01, 0.01, 0.01]
+    }
+  ]
+}

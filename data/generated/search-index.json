@@ -1,0 +1,73 @@
+{
+  "name": "neet-biology-index",
+  "fields": [
+    {
+      "name": "chunk_id",
+      "type": "Edm.String",
+      "key": true,
+      "searchable": false
+    },
+    {
+      "name": "document_id",
+      "type": "Edm.String",
+      "searchable": false,
+      "filterable": true
+    },
+    {
+      "name": "subject",
+      "type": "Edm.String",
+      "searchable": true,
+      "filterable": true
+    },
+    {
+      "name": "chapter",
+      "type": "Edm.String",
+      "searchable": true,
+      "filterable": true
+    },
+    {
+      "name": "topic",
+      "type": "Edm.String",
+      "searchable": true,
+      "filterable": true
+    },
+    {
+      "name": "source_document",
+      "type": "Edm.String",
+      "searchable": false,
+      "filterable": true
+    },
+    {
+      "name": "page_number",
+      "type": "Edm.Int32",
+      "filterable": true,
+      "sortable": true
+    },
+    {
+      "name": "content",
+      "type": "Edm.String",
+      "searchable": true
+    },
+    {
+      "name": "embedding",
+      "type": "Collection(Edm.Single)",
+      "searchable": true,
+      "dimensions": 1536,
+      "vectorSearchProfile": "vector-profile"
+    }
+  ],
+  "vectorSearch": {
+    "algorithms": [
+      {
+        "name": "hnsw-config",
+        "kind": "hnsw"
+      }
+    ],
+    "profiles": [
+      {
+        "name": "vector-profile",
+        "algorithm": "hnsw-config"
+      }
+    ]
+  }
+}
