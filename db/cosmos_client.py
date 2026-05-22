@@ -1,15 +1,15 @@
 import os
 
 from azure.cosmos import CosmosClient
-from dotenv import load_dotenv
+from core.config import settings
 
-load_dotenv()
-
-COSMOS_ENDPOINT = os.getenv("COSMOS_ENDPOINT")
-COSMOS_KEY = os.getenv("COSMOS_KEY")
-COSMOS_DATABASE = os.getenv("COSMOS_DATABASE")
-COSMOS_CONTAINER = os.getenv("COSMOS_CONTAINER")
-COSMOS_SESSION_CONTAINER =os.getenv("COSMOS_SESSION_CONTAINER")
+COSMOS_ENDPOINT = settings.COSMOS_ENDPOINT
+COSMOS_KEY = settings.COSMOS_KEY
+COSMOS_DATABASE = settings.COSMOS_DATABASE
+COSMOS_CONTAINER = settings.COSMOS_CONTAINER
+COSMOS_SESSION_CONTAINER = (
+    settings.COSMOS_SESSION_CONTAINER
+)
 
 client = CosmosClient(
     COSMOS_ENDPOINT,
@@ -27,3 +27,20 @@ container = database.get_container_client(
 session_container = database.get_container_client(
     COSMOS_SESSION_CONTAINER
 )
+
+def check_cosmos_health():
+
+    """
+    Lightweight Cosmos DB
+    connectivity validation.
+    """
+
+    try:
+
+        database.read()
+
+        return True
+
+    except Exception:
+
+        return False

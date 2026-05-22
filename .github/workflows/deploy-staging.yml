@@ -50,3 +50,11 @@ jobs:
           az webapp restart \
             --name $WEBAPP_NAME \
             --resource-group $RESOURCE_GROUP
+
+      - name: Wait for application startup
+        run: sleep 45
+
+      - name: Verify readiness endpoint
+        run: |
+          curl --fail \
+            https://ai-agent-staging-12345.azurewebsites.net/health/ready

@@ -44,7 +44,18 @@ from middleware.request_logging_middleware import (
     request_logging_middleware
 )
 
-
+from db.cosmos_client import (
+    check_cosmos_health
+)
+from services.retrieval.vector_search_service import (
+    check_search_health
+)
+from storage.blob_storage_client import (
+    check_blob_storage_health
+)
+from health.startup_validator import (
+    validate_dependencies
+)
 
 connection_string = (
     settings.APPLICATIONINSIGHTS_CONNECTION_STRING
@@ -150,6 +161,15 @@ def startup_event():
     logger.info(
         "application_startup"
     )
+
+    dependency_results = (
+    validate_dependencies()
+    )
+
+    logger.info(
+        f"startup_dependency_summary="
+        f"{dependency_results}"
+    )
     
     if ENABLE_INGESTION:
         logger.info(
@@ -171,22 +191,90 @@ def liveness_probe():
 
 @app.get("/health/ready")
 def readiness_probe():
+
+    checks = {}
+
+    # Redis Check
     try:
-        redis_status = redis_client.ping()
 
-    except Exception:
-        redis_status = False
+        redis_client.ping()
 
-    checks = {
-        "openai_api_key": bool(settings.OPENAI_API_KEY),
-        "api_key": bool(settings.API_KEY),
-        "redis": redis_status
-    }
+        checks["redis"] = True
 
-    all_ready = all(checks.values())
+    except Exception as ex:
+
+        logger.exception(
+            f"redis_readiness_failed: {str(ex)}"
+        )
+
+        checks["redis"] = False
+
+    # OpenAI Check
+    checks["openai_api_key"] = bool(
+        settings.OPENAI_API_KEY
+    )
+
+    # Internal API Security
+    checks["api_key"] = bool(
+        settings.API_KEY
+    )
+
+    # Cosmos DB Check
+    try:
+
+        checks["cosmos"] = (
+            check_cosmos_health()
+        )
+
+    except Exception as ex:
+
+        logger.exception(
+            f"cosmos_readiness_failed: {str(ex)}"
+        )
+
+        checks["cosmos"] = False
+
+    # Azure AI Search Check
+    try:
+
+        checks["azure_search"] = (
+            check_search_health()
+        )
+
+    except Exception as ex:
+
+        logger.exception(
+            f"search_readiness_failed: {str(ex)}"
+        )
+
+        checks["azure_search"] = False
+
+    # Blob Storage Check
+    try:
+
+        checks["storage"] = (
+            check_blob_storage_health()
+        )
+
+    except Exception as ex:
+
+        logger.exception(
+            f"storage_readiness_failed: {str(ex)}"
+        )
+
+        checks["storage"] = False
+
+
+    all_ready = all(
+        checks.values()
+    )
 
     return {
-        "status": "ready" if all_ready else "not_ready",
+        "status": (
+            "ready"
+            if all_ready
+            else "not_ready"
+        ),
         "checks": checks
     }
 

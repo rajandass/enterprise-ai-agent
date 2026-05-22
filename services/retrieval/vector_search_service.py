@@ -1,23 +1,27 @@
 import os
 import requests
-from dotenv import load_dotenv
 
 from services.retrieval.embedding_service import (
     generate_embedding
 )
 
-load_dotenv()
+from core.config import settings
 
-# Azure AI Search Config
-SEARCH_ENDPOINT = os.getenv(
-    "AZURE_SEARCH_ENDPOINT"
+SEARCH_ENDPOINT = (
+    settings.AZURE_SEARCH_ENDPOINT
 )
-SEARCH_KEY = os.getenv(
-    "AZURE_SEARCH_API_KEY"
-)
-INDEX_NAME = os.getenv("AZURE_SEARCH_INDEX_NAME")
 
-API_VERSION = os.getenv("AZURE_SEARCH_API_VERSION")
+SEARCH_KEY = (
+    settings.AZURE_SEARCH_API_KEY
+)
+
+INDEX_NAME = (
+    settings.AZURE_SEARCH_INDEX_NAME
+)
+
+API_VERSION = (
+    settings.AZURE_SEARCH_API_VERSION
+)
 
 # Search URL
 SEARCH_URL = (
@@ -68,15 +72,38 @@ def search_similar_chunks(
     response = requests.post(
         SEARCH_URL,
         headers=headers,
-        json=payload
+        json=payload,
+        timeout=10
     )
-
-    print("\n--- STATUS CODE ---\n")
-    print(response.status_code)
-
-    print("\n--- RAW RESPONSE ---\n")
-    print(response.text)
-
     results = response.json()
 
     return results.get("value", [])
+
+def check_search_health():
+
+    """
+    Lightweight Azure AI Search
+    connectivity validation.
+    """
+
+    try:
+
+        headers = {
+            "api-key": SEARCH_KEY
+        }
+
+        response = requests.get(
+            (
+                f"{SEARCH_ENDPOINT}"
+                f"/indexes/{INDEX_NAME}"
+                f"?api-version={API_VERSION}"
+            ),
+            headers=headers,
+            timeout=5
+        )
+
+        return response.status_code == 200
+
+    except Exception:
+
+        return False
