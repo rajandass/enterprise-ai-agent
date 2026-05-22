@@ -1,182 +1,276 @@
-# Enterprise AI Support Agent
+# Enterprise AI Agent Platform
 
-Production-grade AI support platform built with FastAPI, OpenAI, ChromaDB, Azure App Service, Azure Application Insights, and enterprise security/observability practices.
+Production-grade AI/RAG platform built with FastAPI, Azure cloud services, enterprise observability, and scalable deployment architecture.
 
 ---
 
-# 🚀 Features
+# Overview
 
-## AI & Retrieval
+The Enterprise AI Agent Platform is an enterprise-focused AI backend system designed for:
 
 * Retrieval-Augmented Generation (RAG)
-* OpenAI-powered question answering
-* ChromaDB vector database
-* Semantic document retrieval
-* Automated ingestion pipeline
+* Intelligent tutoring systems
+* Enterprise observability
+* Production-grade deployment workflows
+* Scalable AI infrastructure
+* Azure-native integrations
 
-## API Platform
+The platform currently powers:
 
-* FastAPI backend
-* Swagger/OpenAPI documentation
-* Structured API responses
-* Request tracing
-* Health probe endpoints
-
-## Cloud & DevOps
-
-* Azure App Service deployment
-* GitHub Actions CI/CD pipeline
-* Protected production deployments
-* Branch protection rules
-* Pull request governance
-
-## Observability
-
-* Azure Application Insights integration
-* Structured logging
-* Distributed tracing
-* Live metrics monitoring
-* Dependency tracking
-* Production telemetry
-
-## Security
-
-* API key authentication
-* Azure Key Vault integration
-* Managed Identity authentication
-* RBAC-based secret access
-* Rate limiting protection
-
-## Reliability & Operations
-
-* Liveness probe
-* Readiness probe
-* Failed request alerting
-* Availability alerting
-* Latency alerting
+* NEET Biology AI tutoring workflows
+* Semantic retrieval pipelines
+* Persistent conversational memory
+* Adaptive tutoring foundations
+* Production-ready deployment pipelines
 
 ---
 
-# 🏗️ Architecture
+# Core Architecture
 
 ```text
-Client
-   ↓
-FastAPI API Layer
-   ↓
-Authentication & Rate Limiting
-   ↓
-RAG Pipeline
-   ↓
-OpenAI + ChromaDB
-   ↓
-Azure Monitoring & Telemetry
+Client Applications
+        ↓
+FastAPI Backend
+        ↓
+Middleware Layer
+(Request Logging / Tracing / Rate Limiting)
+        ↓
+RAG & AI Services
+        ↓
+Azure OpenAI + Azure AI Search
+        ↓
+Persistence & Memory Layer
+(Cosmos DB / Redis / Blob Storage)
+        ↓
+Observability & Monitoring
+(Application Insights / Structured Logs)
 ```
 
 ---
 
-# 📂 Project Structure
+# Technology Stack
+
+## Backend
+
+* FastAPI
+* Python 3.10
+* Uvicorn
+* Pydantic
+
+## AI & Retrieval
+
+* Azure OpenAI
+* Azure AI Search
+* Vector Retrieval
+* Semantic Chunk Search
+
+## Cloud & Infrastructure
+
+* Azure App Service
+* Azure Container Registry (ACR)
+* Azure Key Vault
+* Managed Identity
+* RBAC
+* Azure Blob Storage
+* Cosmos DB
+* Redis
+
+## Observability
+
+* Azure Application Insights
+* Structured Logging
+* Request Tracing
+* Dependency Health Monitoring
+
+## DevOps
+
+* GitHub Actions
+* Docker
+* CI/CD Pipelines
+* Feature Branch Deployments
+
+---
+
+# Key Features
+
+## Platform Foundation
+
+* Layered FastAPI architecture
+* Structured middleware pipeline
+* Centralized configuration management
+* Global exception handling
+* Request correlation IDs
+
+## Health & Readiness
+
+* `/health/live` endpoint
+* `/health/ready` endpoint
+* Dependency-aware readiness validation
+* Startup dependency validation
+* Structured readiness logging
+
+## AI/RAG Platform
+
+* Embedding generation
+* Azure AI Search vector retrieval
+* Semantic chunk retrieval
+* Tutor memory architecture
+* Session persistence
+* Adaptive tutoring foundations
+
+## Security
+
+* API key authentication
+* Azure Key Vault secret references
+* Managed Identity integration
+* RBAC-based access control
+* Centralized secret management
+
+## Observability
+
+* Structured logging
+* Request tracing
+* Startup audit logging
+* Dependency monitoring
+* Application Insights integration
+
+---
+
+# Repository Structure
 
 ```text
 enterprise-ai-agent/
 │
-├── api/
-│   └── main.py
-│
-├── pipelines/
-│   ├── ingestion.py
-│   └── query.py
-│
-├── data/
-├── chroma_db/
-├── .github/workflows/
-├── requirements.txt
-├── Dockerfile
+├── api/                    # FastAPI application entrypoints
+├── config/                 # Configuration management
+├── db/                     # Database and storage integrations
+├── middleware/             # Request middleware
+├── routes/                 # API routes
+├── services/               # Core business services
+├── retrieval/              # Vector retrieval pipeline
+├── observability/          # Logging and monitoring
+├── experiments/            # Experimental scripts
+├── tests/                  # Testing modules
+├── .github/workflows/      # CI/CD pipelines
+├── Dockerfile              # Container runtime
+├── requirements.txt        # Python dependencies
 └── README.md
 ```
 
 ---
 
-# ⚙️ Tech Stack
+# Environment Variables
 
-| Category      | Technology                 |
-| ------------- | -------------------------- |
-| Backend       | FastAPI                    |
-| LLM           | OpenAI GPT                 |
-| Vector DB     | ChromaDB                   |
-| Cloud         | Azure App Service          |
-| Observability | Azure Application Insights |
-| Secrets       | Azure Key Vault            |
-| Auth          | API Key Authentication     |
-| CI/CD         | GitHub Actions             |
-| Monitoring    | Azure Monitor              |
-| Rate Limiting | SlowAPI                    |
+## Core Platform
 
----
+```env
+OPENAI_API_KEY=
+API_KEY=
+ENABLE_INGESTION=false
+MODEL_NAME=gpt-4.1-mini
+TEMPERATURE=0.3
+```
 
-# 🔐 Security Features
+## Cosmos DB
 
-## API Authentication
+```env
+COSMOS_ENDPOINT=
+COSMOS_KEY=
+COSMOS_DATABASE=
+COSMOS_CONTAINER=
+COSMOS_SESSION_CONTAINER=
+```
 
-All protected endpoints require:
+## Azure AI Search
 
-```http
-x-api-key: YOUR_API_KEY
+```env
+AZURE_SEARCH_ENDPOINT=
+AZURE_SEARCH_API_KEY=
+AZURE_SEARCH_INDEX_NAME=
+AZURE_SEARCH_API_VERSION=
+```
+
+## Azure Blob Storage
+
+```env
+AZURE_STORAGE_ACCOUNT=
+AZURE_STORAGE_KEY=
+AZURE_STORAGE_CONTAINER=
+```
+
+## Redis
+
+```env
+REDIS_CONNECTION_STRING=
 ```
 
 ---
 
-## Key Vault Integration
+# Local Development Setup
 
-Secrets are managed using:
+## 1. Clone Repository
 
-* Azure Key Vault
-* Managed Identity
-* RBAC authorization
+```bash
+git clone <repository-url>
+cd enterprise-ai-agent
+```
 
-No production secrets are hardcoded.
+## 2. Create Virtual Environment
+
+### Windows PowerShell
+
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+```
 
 ---
 
-## Rate Limiting
+## 3. Install Dependencies
 
-API requests are throttled using:
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## 4. Configure Environment
+
+Create:
 
 ```text
-5 requests per minute per client
+.env
 ```
 
-Excess requests return:
+Add required environment variables.
 
-```http
-429 Too Many Requests
+---
+
+## 5. Start Application
+
+```bash
+uvicorn api.main:app --reload
 ```
 
 ---
 
-# 📊 Observability
+# Docker Runtime
 
-## Application Insights
+## Build Image
 
-Integrated telemetry includes:
+```bash
+docker build -t enterprise-ai-agent .
+```
 
-* Request tracing
-* Dependency tracking
-* Structured logs
-* Performance monitoring
-* Failure analytics
+## Run Container
 
-## Operational Alerts
-
-Configured alerts:
-
-* High failed requests
-* Availability degradation
-* High response latency
+```bash
+docker run -it --rm -p 8000:8000 --env-file .env enterprise-ai-agent
+```
 
 ---
 
-# ❤️ Health Probes
+# Health Endpoints
 
 ## Liveness Probe
 
@@ -184,7 +278,7 @@ Configured alerts:
 GET /health/live
 ```
 
-Response:
+Example Response:
 
 ```json
 {
@@ -200,132 +294,144 @@ Response:
 GET /health/ready
 ```
 
-Response:
+Example Response:
 
 ```json
 {
   "status": "ready",
   "checks": {
     "openai_api_key": true,
-    "api_key": true
+    "api_key": true,
+    "redis": true
   }
 }
 ```
 
 ---
 
-# 🚀 Local Development
+# Deployment Architecture
 
-## 1. Clone Repository
-
-```bash
-git clone <repo-url>
-cd enterprise-ai-agent
-```
-
----
-
-## 2. Create Virtual Environment
-
-```bash
-python -m venv venv
-```
-
-Activate:
-
-### Windows PowerShell
-
-```powershell
-.\venv\Scripts\Activate.ps1
-```
-
----
-
-## 3. Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
----
-
-## 4. Configure Environment Variables
-
-### Local Variables
-
-```powershell
-$env:OPENAI_API_KEY="your-openai-key"
-$env:API_KEY="your-api-key"
-$env:APPLICATIONINSIGHTS_CONNECTION_STRING="your-connection-string"
-```
-
----
-
-## 5. Run Application
-
-```bash
-uvicorn api.main:app --reload
-```
-
-Swagger UI:
+## Staging Flow
 
 ```text
-http://127.0.0.1:8000/docs
+feature/* branch
+        ↓
+GitHub Actions CI/CD
+        ↓
+Docker Build
+        ↓
+Azure Container Registry
+        ↓
+Azure App Service (Staging)
+        ↓
+Readiness Validation
 ```
 
 ---
 
-# ☁️ Azure Deployment
+# GitHub Project Workflow
 
-## Azure Services Used
+The engineering workflow is managed through a centralized GitHub Project board.
 
-* Azure App Service
-* Azure Application Insights
-* Azure Key Vault
-* Azure Monitor
+Workflow stages:
 
----
+* Backlog
+* Planned
+* In Progress
+* Blocked
+* Testing
+* Done
+* Future
 
-## CI/CD Pipeline
+The project board tracks:
 
-Deployment pipeline includes:
-
-* GitHub Actions
-* Pull request validation
-* Protected main branch
-* Manual production approvals
-
----
-
-# 📈 Current Production Capabilities
-
-✅ Enterprise Authentication
-✅ Secret Management
-✅ Production Monitoring
-✅ Structured Logging
-✅ Rate Limiting
-✅ Health Monitoring
-✅ Alerting
-✅ CI/CD Governance
-✅ Azure Deployment
+* frontend work
+* backend work
+* infrastructure
+* observability
+* deployment readiness
+* roadmap execution
 
 ---
 
-# 🛣️ Planned Enhancements
+# Current Engineering Status
 
-* Redis caching
-* Streaming responses
-* Background job queues
-* Async ingestion pipeline
-* Frontend UI
-* Kubernetes deployment
-* Semantic caching
-* Multi-tenant architecture
+## Completed
+
+* FastAPI backend foundation
+* Health & readiness architecture
+* Azure infrastructure integration
+* CI/CD deployment pipelines
+* Managed Identity integration
+* RAG retrieval pipeline
+* Cosmos memory persistence
+* Application Insights integration
+* Feature branch deployment strategy
+
+## In Progress
+
+* Frontend platform foundation
+* Deployment smoke testing
+* Container observability improvements
+* Personalized tutoring capabilities
+
+## Planned
+
+* Retry & circuit breaker strategies
+* Integration testing framework
+* Monitoring dashboards
+* Frontend chat experience
+* Advanced tutor personalization
 
 ---
 
-# 👨‍💻 Author
+# Engineering Principles
 
-Rajan Dass
+The platform emphasizes:
 
-Enterprise AI Platform Engineering Project
+* production-first engineering
+* deployment validation
+* observability-driven operations
+* scalable architecture
+* lightweight governance
+* execution discipline
+
+---
+
+# Related Repositories
+
+## Frontend Platform
+
+Repository:
+
+```text
+enterprise-ai-frontend
+```
+
+Responsible for:
+
+* React frontend
+* Chat experience
+* Streaming UI
+* API integration layer
+* User experience
+
+---
+
+# Future Roadmap
+
+Planned future initiatives include:
+
+* JWT authentication
+* OAuth integration
+* Hybrid search
+* Circuit breaker strategies
+* Integration testing
+* Multi-tenant SaaS architecture
+* Advanced AI personalization
+
+---
+
+# License
+
+Private enterprise project.
